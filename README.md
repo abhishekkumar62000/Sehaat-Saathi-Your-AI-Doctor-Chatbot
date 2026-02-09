@@ -3,8 +3,13 @@
 
 <img width="1026" height="974" alt="SehaatSaathi" src="https://github.com/user-attachments/assets/0bae4777-f9b5-4e8a-a9b5-430f2398c639" />
 
-
 OUR Live APP:-- [https://sehaatsaathi-ai-doctor.streamlit.app/](https://sehaatsaathi-ai-doctor.streamlit.app/)
+
+
+**App Demo🤖:--**
+
+https://github.com/user-attachments/assets/8b54e8a6-37ed-4da7-9b83-130c1a35d683
+
 
 <img width="1024" height="1024" alt="Doctor" src="https://github.com/user-attachments/assets/8e4513db-2930-4910-a3d6-55579287a017" />
 
@@ -587,87 +592,7 @@ Perfect — below are **both deliverables**, written at a **startup / patent / s
 
 ---
 
-# 1️⃣ Mermaid Diagram
 
-## Sehaat Saathi – LangGraph Binary Tree Architecture
-
-You can paste this **directly into GitHub README**.
-GitHub **natively supports Mermaid** now.
-
----
-
-## 🌳 LangGraph Binary Tree (Mermaid)
-
-```mermaid
-flowchart TD
-    A[User Input<br/>(Symptoms / Image / Query)] --> B[Triage & Intent Classifier]
-
-    B -->|Non-Emergency| C[Non-Emergency Flow]
-    B -->|Emergency| D[Emergency Flow]
-
-    %% Non-Emergency Branch
-    C --> E[Symptom Domain Classifier]
-    E -->|General| F[Dr. Sehaat<br/>General Physician]
-    E -->|Specialist| G[Specialist Router]
-
-    G --> H1[Dr. Hriday<br/>Cardiology]
-    G --> H2[Dr. Megha<br/>Neurology]
-    G --> H3[Dr. Sthree<br/>Gynecology]
-    G --> H4[Mental Health AI]
-    G --> H5[Skin / Ortho / ENT / Kids]
-
-    F --> I[Diagnostic Validation Node]
-    H1 --> I
-    H2 --> I
-    H3 --> I
-    H4 --> I
-    H5 --> I
-
-    I --> J[Dr. Aushadh<br/>Pharmacy Safety]
-    J --> K[Vaidya Veda<br/>Ayurveda + Safety]
-
-    K --> L[Risk Re-Evaluation]
-
-    %% Emergency Override
-    L -->|Risk Detected| D
-    L -->|Safe| M[Wellness & Care Planning]
-
-    %% Emergency Branch
-    D --> N[Emergency AI Agent]
-    N --> O[Real-Time Infrastructure Node]
-
-    O --> P[Hospital Bed Tracker]
-    O --> Q[Blood Bank Finder]
-    O --> R[Ambulance Locator]
-
-    P --> S[Digital OPD Ticket Generator]
-    Q --> S
-    R --> S
-
-    %% Wellness & Long-Term Care
-    M --> T[Lab Report Analysis]
-    T --> U[Dr. Nidaan<br/>Diagnostics AI]
-
-    M --> V[Preventive Care]
-    V --> W[Yoga & Lifestyle AI]
-    V --> X[Diet & BMI AI]
-
-    %% Cost Optimization
-    M --> Y[Medicine Recommendation]
-    Y --> Z[Jan Aushadhi Savings Engine]
-    Z --> AA[Cost Report + Kendra Locator]
-
-    %% Final Output
-    S --> AB[Final Response Composer]
-    U --> AB
-    W --> AB
-    X --> AB
-    AA --> AB
-
-    AB --> AC[UI Delivery Node<br/>(Text • Voice • PDF • Calendar)]
-```
-
----
 
 # 2️⃣ Patent-Style Architecture Document
 
