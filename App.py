@@ -131,20 +131,11 @@ END:VCALENDAR"""
 # -----------------------------------
 
 
-# Load API key handling for Streamlit Cloud
-def get_groq_api_key():
-    # Attempt to get from Streamlit Secrets (for Cloud deployment)
-    try:
-        if "GROQ_API_KEY" in st.secrets:
-            return st.secrets["GROQ_API_KEY"]
-    except:
-        pass
-    
-    # Fallback to .env (for Local development)
-    load_dotenv(override=True)
-    return os.getenv('GROQ_API_KEY')
+# Load environment variables with override to ensure updates are caught
+load_dotenv(override=True)
 
-groq_api_key = get_groq_api_key()
+# Get the API key from environment variable
+groq_api_key = os.getenv('GROQ_API_KEY')
 
 # --- 📄 PDF Generation Class ---
 class PDF(FPDF):
