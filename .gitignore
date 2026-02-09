@@ -1,0 +1,7 @@
+.env
+__pycache__/
+*.pyc
+.streamlit/
+*.pdf
+medicineData.js
+run_app.bat

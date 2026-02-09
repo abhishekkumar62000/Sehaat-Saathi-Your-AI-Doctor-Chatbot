@@ -1,0 +1,4 @@
+portaudio19-dev
+ffmpeg
+tesseract-ocr
+libgl1-mesa-glx
