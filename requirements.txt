@@ -1,4 +1,6 @@
 streamlit==1.41.1
+speechrecognition
+rich<14
 pandas==2.2.3
 plotly==5.24.1
 SpeechRecognition==3.10.4
