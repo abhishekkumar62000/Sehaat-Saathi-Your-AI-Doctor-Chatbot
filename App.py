@@ -1,6 +1,11 @@
 import os
 import streamlit as st
-import speech_recognition as sr # type: ignore
+try:
+    import speech_recognition as sr # type: ignore
+    SPEECH_RECOGNITION_AVAILABLE = True
+except Exception:
+    sr = None
+    SPEECH_RECOGNITION_AVAILABLE = False
 import tempfile
 import time
 import pandas as pd
@@ -1491,7 +1496,7 @@ active_prompt = base_system_prompt + memory_instruction + f" Respond in {languag
 #     "and always suggest consulting a real doctor for serious issues."
 # )
 
-recognizer = sr.Recognizer()
+recognizer = sr.Recognizer() if SPEECH_RECOGNITION_AVAILABLE else None
 
 def speak_text(text, lang="hi"):
     if not isinstance(text, str) or not text.strip():
@@ -1508,6 +1513,8 @@ def speak_text(text, lang="hi"):
     st.markdown(audio_html, unsafe_allow_html=True)
 
 def recognize_speech():
+    if not SPEECH_RECOGNITION_AVAILABLE or recognizer is None:
+        return "❌ Voice input is unavailable in this environment."
     try:
         if not sr.Microphone.list_microphone_names():
             return "❌ No microphone detected!"
