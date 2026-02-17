@@ -24,8 +24,20 @@ import datetime
 import re
 import ast
 from fpdf import FPDF # type: ignore
-from AI_Doctor_Agents import get_system_prompt
-from RealTimeData import emergency_services # Import Real-Time Services
+
+# Import custom modules with error handling
+try:
+    from AI_Doctor_Agents import get_system_prompt
+except ImportError as e:
+    st.error(f"❌ Error loading AI_Doctor_Agents: {e}")
+    st.stop()
+
+try:
+    from RealTimeData import emergency_services # Import Real-Time Services
+except ImportError as e:
+    st.error(f"❌ Error loading RealTimeData: {e}")
+    st.stop()
+
 import pandas as pd
 import plotly.express as px # type: ignore
 import plotly.graph_objects as go # type: ignore
@@ -141,6 +153,18 @@ load_dotenv(override=True)
 
 # Get the API key from environment variable
 groq_api_key = os.getenv('GROQ_API_KEY')
+
+# ⚠️ CRITICAL: Validate API Key at startup
+if not groq_api_key:
+    st.error(
+        "🚨 **CRITICAL ERROR: GROQ_API_KEY is Missing!**\n\n"
+        "Please add your GROQ API Key to Streamlit Secrets:\n"
+        "1. Go to your Streamlit Cloud dashboard\n"
+        "2. Click Settings → Secrets\n"
+        "3. Add: `GROQ_API_KEY = 'your-key-here'`\n\n"
+        "Get a free key: https://console.groq.com/"
+    )
+    st.stop()
 
 # --- 📄 PDF Generation Class ---
 class PDF(FPDF):
@@ -1459,7 +1483,11 @@ if "selected_model" not in locals(): selected_model = "llama-3.3-70b-versatile"
 if "assistant_mode" not in locals(): assistant_mode = "General Physician (General Medicine)"
 if "language" not in locals(): language = "English"
 
-ai_doctor = ChatGroq(api_key=groq_api_key, model=selected_model, temperature=0.3)
+try:
+    ai_doctor = ChatGroq(api_key=groq_api_key, model=selected_model, temperature=0.3)
+except Exception as e:
+    st.error(f"❌ Failed to initialize AI Doctor: {str(e)}")
+    st.stop()
 
 
 # 🧠 MEMORY OPTIMIZATION & PROMPT LOADING
