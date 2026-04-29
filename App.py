@@ -18,12 +18,23 @@ from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 import base64
 from PyPDF2 import PdfReader
 from PIL import Image
+import json
+import re
 import pytesseract # type: ignore
 import random
 import datetime
 import re
 import ast
 from fpdf import FPDF # type: ignore
+
+# 🔐 Import Authentication Modules
+try:
+    from auth_database import patient_db
+    from auth_ui import show_login_page, show_patient_dashboard, logout_user
+    AUTHENTICATION_AVAILABLE = True
+except ImportError as e:
+    st.warning(f"⚠️ Authentication module not available: {e}")
+    AUTHENTICATION_AVAILABLE = False
 
 # Import custom modules with error handling
 try:
@@ -260,11 +271,24 @@ MEDICINE_DB = load_medicine_db()
 
 st.set_page_config("SehaatSaathi-Your AI Doctor Health Assistant😷", page_icon="👨‍⚕️", layout="wide")
 
+# 🔐 Authentication Middleware - Initialize Session State
+if 'authenticated' not in st.session_state:
+    st.session_state.authenticated = False
+    st.session_state.patient_id = None
+    st.session_state.phone_number = None
+    st.session_state.patient_name = None
+    st.session_state.profile_complete = False
+
+# 🔐 Authentication Check - Redirect to Login if Not Authenticated
+if AUTHENTICATION_AVAILABLE and not st.session_state.authenticated:
+    show_login_page()
+    st.stop()
+
 # 🎨 Custom CSS for Outstanding Interactive UI
 st.markdown("""
 <!-- 🇮🇳 Ashoka Chakra Background Animation -->
 <div class="ashoka-chakra-bg">
-    <svg viewBox="0 0 240 240" xmlns="http://www.w3.org/2000/svg" filter="drop-shadow(0 0 10px rgba(0, 210, 255, 0.5))">
+    <svg viewBox="0 0 240 240" xmlns="http://www.w3.org/2000/svg" filter="drop-shadow(0 0 3px rgba(0, 210, 255, 0.1))">
         <circle cx="120" cy="120" r="110" fill="none" stroke="#00d2ff" stroke-width="10" stroke-opacity="1.0"/>
         <circle cx="120" cy="120" r="20" fill="#00d2ff" fill-opacity="0.8"/>
         <g stroke="#00d2ff" stroke-width="4" stroke-opacity="1.0">
@@ -324,8 +348,8 @@ st.markdown("""
     }
     
     @keyframes pulseChakra {
-        0% { transform: translate(-50%, -50%) scale(0.9); opacity: 0.25; }
-        100% { transform: translate(-50%, -50%) scale(1.05); opacity: 0.5; } 
+        0% { transform: translate(-50%, -50%) scale(0.9); opacity: 0.06; }
+        100% { transform: translate(-50%, -50%) scale(1.05); opacity: 0.15; } 
     }
     
     .ashoka-chakra-bg {
@@ -500,15 +524,24 @@ st.markdown("""
     /* ⌨ Input Fields */
     .stTextInput > div > div > input {
         background-color: rgba(255, 255, 255, 0.05);
-        border: 1px solid rgba(255, 255, 255, 0.2);
+        border: 2px solid rgba(255, 255, 255, 0.1);
         border-radius: 15px;
         color: #e0e0e0;
-        padding: 10px;
+        padding: 12px;
+        font-size: 16px; /* Prevents auto-zoom on iOS */
     }
     
     .stTextInput > div > div > input:focus {
         border-color: #00d2ff;
-        box-shadow: 0 0 15px rgba(0, 210, 255, 0.3);
+        box-shadow: 0 0 20px rgba(0, 210, 255, 0.4);
+        background-color: rgba(255, 255, 255, 0.08);
+    }
+
+    [data-testid="stChatInput"] {
+        border-radius: 25px !important;
+        border: 1px solid rgba(0, 210, 255, 0.3) !important;
+        background: rgba(255, 255, 255, 0.05) !important;
+        backdrop-filter: blur(10px) !important;
     }
 
     /* 🖼 Image Borders */
@@ -523,6 +556,89 @@ st.markdown("""
         border-color: #00d2ff transparent #00d2ff transparent;
     }
 
+    /* 📱 MOBILE RESPONSIVENESS OVERHAUL */
+    @media (max-width: 768px) {
+        /* Optimize block container for mobile */
+        .main .block-container {
+            padding: 1rem 0.5rem !important;
+            max-width: 100% !important;
+        }
+
+        /* Fluid Typography */
+        h1 { font-size: calc(1.5rem + 1vw) !important; text-align: center; }
+        h2 { font-size: calc(1.2rem + 1vw) !important; }
+        h3 { font-size: calc(1rem + 1vw) !important; }
+
+        /* Sidebar overhaul for mobile */
+        [data-testid="stSidebar"] {
+            width: 100% !important;
+            position: relative !important;
+        }
+
+        /* Better chat bubbles for small screens */
+        .stChatMessage {
+            padding: 10px !important;
+            margin: 5px 0 !important;
+            border-radius: 12px !important;
+        }
+
+        /* Full-width buttons for thumbs */
+        .stButton > button {
+            width: 100% !important;
+            height: 48px !important; /* Touch target minimum */
+            font-size: 16px !important;
+        }
+
+        /* Fix floating elements overlapping on mobile */
+        .ashoka-chakra-bg, .ecg-container, .floating-particles {
+            display: none !important;
+        }
+        
+        /* Make columns stack nicely */
+        [data-row-column-id] {
+            flex-direction: column !important;
+        }
+    }
+
+    /* 🖥️ DESKTOP ENHANCEMENTS */
+    @media (min-width: 769px) {
+        .main .block-container {
+            padding: 3rem 5rem !important;
+            max-width: 1200px !important;
+            margin: auto;
+        }
+        
+        /* Glassmorphism Hover Effects */
+        .stChatMessage:hover {
+            background: rgba(255, 255, 255, 0.08) !important;
+            transform: scale(1.01);
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 30px rgba(0, 210, 255, 0.2) !important;
+        }
+    }
+
+    /* 🌈 PREMIUM GLOBAL STYLES */
+    .stApp {
+        background: radial-gradient(circle at top right, #1a1a2e, #16213e, #0f3460) !important;
+    }
+    
+    /* Modern Scrollbar */
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); }
+    ::-webkit-scrollbar-thumb { background: #00d2ff; border-radius: 10px; }
+    ::-webkit-scrollbar-thumb:hover { background: #00b4d8; }
+
+    /* Glass Card Class */
+    .glass-card {
+        background: rgba(255, 255, 255, 0.03);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 20px;
+        padding: 20px;
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+    }
+    
 </style>
 """, unsafe_allow_html=True)
 
@@ -606,9 +722,27 @@ if not st.session_state.profile_complete:
                 st.session_state.patient_condition = condition_input if condition_input else "None"
                 st.session_state.patient_allergies = allergies_input if allergies_input else "None"
                 st.session_state.profile_complete = True
+                
+                # 🔐 Save Patient Profile to Database
+                if AUTHENTICATION_AVAILABLE and st.session_state.authenticated:
+                    try:
+                        patient_db.update_patient_profile(
+                            patient_id=st.session_state.patient_id,
+                            full_name=name_input,
+                            age=age_input,
+                            gender=gender_input,
+                            weight=weight_input,
+                            medical_conditions=condition_input if condition_input else "None",
+                            allergies=allergies_input if allergies_input else "None"
+                        )
+                        st.success("✅ Profile saved successfully!")
+                    except Exception as e:
+                        st.warning(f"⚠️ Could not save profile to database: {e}")
+                
                 st.rerun()
             else:
                 st.warning("⚠️ Please enter your Name to proceed.")
+
                 
     # STOP EXECUTION HERE IF PROFILE IS NOT COMPLETE
     st.stop()
@@ -678,6 +812,7 @@ with st.sidebar:
                 "Gynecologist (Women's Health)", 
                 "Psychiatrist/Therapist (Mental Health)", 
                 "Clinical Pharmacist (Medicine Expert)",
+                "Consult Panel (Multi-Doctor Board)",
                 "Ayurvedic Practitioner (Natural Remedies)",
                 "Dietitian & Nutritionist" 
             ]
@@ -754,10 +889,18 @@ with st.sidebar:
     else:
         st.info("👤 Designer: Abhishek Yadav")
 
-    if st.sidebar.button("🗑️ Reset Conversation"):
+    if st.sidebar.button("🗑️ Reset Conversation", use_container_width=True):
         st.session_state.message_log = [{"role": "ai", "content": "👋 नमस्ते! मैं **:orange[Sehaat]:green[Saathi]** हूँ, आपका व्यक्तिगत AI स्वास्थ्य सलाहकार। \n\nमैं **Symptom Check 🩺**, **Diet Plan 🥗**, **Workout Routine 💪** और **Medical Reports 📄** में मदद कर सकता हूँ।"}]
         st.session_state.report_context = ""
         st.rerun()
+
+    # 🔐 Logout Button
+    st.sidebar.write("---")
+    if st.sidebar.button("🚪 Logout", use_container_width=True, help="Log out from your account"):
+        if AUTHENTICATION_AVAILABLE:
+            logout_user()
+            st.success("✅ Logged out successfully!")
+            st.rerun()
 
 # 3. New Feature: Health Tip of Day
 health_tips = [
@@ -771,7 +914,7 @@ health_tips = [
 st.sidebar.info(f"💡 **Health Tip:** {random.choice(health_tips)}")
 
 # 4. New Feature: Emergency Finder
-if st.sidebar.button("🏥 Find Nearby Hospitals"):
+if st.sidebar.button("🏥 Find Nearby Hospitals", use_container_width=True):
     st.sidebar.markdown("[Click here to search on Google Maps](https://www.google.com/maps/search/hospitals+near+me)", unsafe_allow_html=True)
 
 # ==============================================================================
@@ -1483,6 +1626,14 @@ if "selected_model" not in locals(): selected_model = "llama-3.3-70b-versatile"
 if "assistant_mode" not in locals(): assistant_mode = "General Physician (General Medicine)"
 if "language" not in locals(): language = "English"
 
+# --- SMART NAVIGATION INDICATOR ---
+st.markdown(f"""
+    <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 20px; background: rgba(255,255,255,0.05); border-radius: 15px; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.1);">
+        <div style="color: #00d2ff; font-weight: bold;">🏥 {assistant_mode.split('(')[0]}</div>
+        <div style="font-size: 0.85rem; opacity: 0.8;">📍 {selected_city} | 🟢 Live Connected</div>
+    </div>
+""", unsafe_allow_html=True)
+
 try:
     ai_doctor = ChatGroq(api_key=groq_api_key, model=selected_model, temperature=0.3)
 except Exception as e:
@@ -1507,15 +1658,34 @@ if "user_city" in locals():
         pass
 # -------------------------------------------------------------------
 
-memory_instruction = """
+memory_instruction = f"""
 \n\n🧠 MEMORY INSTRUCTION: You are part of an ongoing conversation. 
 - ALWAYS refer to the previous messages in the history to understand context.
+- [History Summary]: {st.session_state.get('history_summary', 'No previous history yet.')}
 - If the user says "it", "that", "the medicine", or "the symptom", they are referring to the last discussed topic.
 - DO NOT ask the user to repeat information they just gave.
 - Combine the new "Verified Medical Database Context" with the previous conversation history to give a complete answer.
 """
 
 active_prompt = base_system_prompt + memory_instruction + f" Respond in {language} language."
+
+# --- SEVERITY SCORE LOGIC ---
+severity_system_prompt = """
+Analyze the user's symptoms and output a JSON object: {"score": integer 0-100, "triage": "LEVEL", "reason": "short explanation"}.
+Levels: LOW (0-30), MEDIUM (31-60), HIGH (61-85), CRITICAL (86-100).
+"""
+
+def get_severity_score(user_text):
+    try:
+        severity_ai = ChatGroq(api_key=groq_api_key, model="llama3-70b-8192", temperature=0)
+        resp = severity_ai.invoke([SystemMessage(content=severity_system_prompt), HumanMessage(content=user_text)])
+        # Extract JSON using regex in case model adds surrounding text
+        match = re.search(r"\{.*\}", resp.content, re.DOTALL)
+        if match:
+            return json.loads(match.group())
+    except:
+        return {"score": 0, "triage": "UNKNOWN", "reason": "Analysis failed"}
+    return {"score": 0, "triage": "UNKNOWN", "reason": "No data"}
 
 
 # System prompt configuration
@@ -1758,9 +1928,17 @@ with col2:
             st.error(recognized_text)
 
 if user_input:
+    # ⚖️ Get Severity Score
+    severity = get_severity_score(user_input)
     st.session_state.message_log.append({"role": "user", "content": user_input})
     with st.chat_message("user"):
         st.markdown(user_input)
+        # Display Severity Badge
+        if severity["score"] > 0:
+            color = "green" if severity["triage"] == "LOW" else "orange" if severity["triage"] == "MEDIUM" else "red"
+            st.markdown(f"🚩 **Severity Analysis**: <span style='color:{color}; font-weight:bold;'>{severity['triage']} ({severity['score']}/100)</span> - *{severity['reason']}*", unsafe_allow_html=True)
+            if severity["score"] > 80:
+                st.error("🚨 EMERGENCY: Patient condition appears CRITICAL. Immediate hospital visit and ambulance call (102/108) is advised!")
 
     # 🔬 INNOVATION: Intelligent Medical Data Retrieval System (Symptom + Name Search)
     consulted_med_info = ""
@@ -1874,8 +2052,37 @@ if user_input:
             st.session_state.message_log.append({"role": "ai", "content": ai_response})
             with st.chat_message("ai"):
                 st.markdown(ai_response)
+            
+            # 🔐 Save Consultation to Database (Patient History)
+            if AUTHENTICATION_AVAILABLE and st.session_state.authenticated:
+                try:
+                    consultation_payload = {
+                        "doctor_type": assistant_mode.split('(')[0].strip(),
+                        "symptoms": user_input[:200],
+                        "diagnosis": ai_response[:500],
+                        "recommendations": "Follow prescribed dosage and diet.",
+                        "medicines_prescribed": ','.join([m['name'] for m in top_meds_found]) if top_meds_found else "None",
+                        "follow_up_date": (datetime.datetime.now() + datetime.timedelta(days=7)).strftime('%Y-%m-%d'),
+                        "notes": "Generated by AI Doctor"
+                    }
+                    patient_db.save_consultation(
+                        patient_id=st.session_state.patient_id,
+                        consultation_data=consultation_payload
+                    )
+                except Exception as e:
+                    st.warning(f"⚠️ Could not save consultation to history: {e}")
                 
             # 5. New Feature: Download Chat/Plan as PDF
+            # Update history summary for next interaction
+            if "history_summary" not in st.session_state:
+                st.session_state.history_summary = ""
+            
+            # 🧬 LONG-TERM MEMORY: Check if summary is needed
+            if len(st.session_state.message_log) > 10:
+                summary_prompt = f"Summarize the following medical history into 3 bullet points for future reference: {str(st.session_state.message_log[-6:])}"
+                summary_res = ai_doctor.invoke([SystemMessage(content=summary_prompt)])
+                st.session_state.history_summary = summary_res.content
+
             pdf_bytes = create_prescription_pdf(
                 st.session_state.patient_name,
                 st.session_state.patient_age,
