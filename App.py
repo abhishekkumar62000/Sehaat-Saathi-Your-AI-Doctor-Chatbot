@@ -2267,24 +2267,36 @@ with st.expander("📤 Medical Report Analysis (Beta)", expanded=False):
             with st.expander("📄 View Report Text"):
                 st.write(report_text)
             
-            if st.button("🔍 Analyze Now"):
-                with st.spinner("🔬 Analyzing Report..."):
+            if st.button("🔍 Analyze Now", use_container_width=True):
+                with st.spinner("🔬 Initializing In-depth Report Analysis..."):
                     try:
+                        # use llama-3.3-70b-versatile for in-depth analysis
+                        local_ai = get_groq_client(groq_api_key, model_name="llama-3.3-70b-versatile", temperature=0.1)
+                        
                         # Use a specific prompt for report analysis
-                        report_agent_prompt = get_system_prompt("Medical Consultant (Report Analyst)", patient_age, patient_gender, patient_condition, patient_allergies)
+                        report_agent_prompt = get_system_prompt("Medical Consultant (Report Analyst)", st.session_state.patient_age, st.session_state.patient_gender, st.session_state.patient_condition, st.session_state.patient_allergies)
+                        
                         messages = [
                             SystemMessage(content=report_agent_prompt),
-                            HumanMessage(content=f"Analyze this medical report and summarize key findings: {report_text}")
+                            HumanMessage(content=f"""Analyze this medical report in extreme detail. 
+                            1. Breakdown every abnormal parameter.
+                            2. Explain the impact on the patient's current health.
+                            3. Provide a clear 'Next Steps' plan.
+                            
+                            REPORT TEXT:
+                            {report_text}""")
                         ]
-                        report_analysis = ai_doctor.invoke(messages)
+                        
+                        report_analysis = local_ai.invoke(messages)
                         if hasattr(report_analysis, "content"):
                             report_analysis = report_analysis.content.strip()
                         
                         # Store in session state
                         st.session_state.report_analysis_result = report_analysis
+                        st.balloons()
                         
                     except Exception as e:
-                        st.error(f"Error analyzing report: {str(e)}")
+                        st.error(f"Error in deep analysis: {str(e)}")
 
             # Display Analysis if available
             if "report_analysis_result" in st.session_state:
