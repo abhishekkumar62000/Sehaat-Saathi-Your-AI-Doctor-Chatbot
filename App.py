@@ -31,7 +31,7 @@ from fpdf import FPDF # type: ignore
 try:
     from auth_database import patient_db
     from auth_ui import show_login_page, show_patient_dashboard, logout_user
-    AUTHENTICATION_AVAILABLE = True
+    AUTHENTICATION_AVAILABLE = False # Authentication disabled as requested
 except ImportError as e:
     st.warning(f"⚠️ Authentication module not available: {e}")
     AUTHENTICATION_AVAILABLE = False
@@ -900,9 +900,9 @@ with st.sidebar:
         st.rerun()
 
     # 🔐 Logout Button
-    st.sidebar.write("---")
-    if st.sidebar.button("🚪 Logout", use_container_width=True, help="Log out from your account"):
-        if AUTHENTICATION_AVAILABLE:
+    if AUTHENTICATION_AVAILABLE:
+        st.sidebar.write("---")
+        if st.sidebar.button("🚪 Logout", use_container_width=True, help="Log out from your account"):
             logout_user()
             st.success("✅ Logged out successfully!")
             st.rerun()
