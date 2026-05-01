@@ -2257,50 +2257,77 @@ with st.expander("📷 AI Med-Lens (Scan Medicine/Syrup) - INDIA FIRST 🇮🇳"
 
 # -------------------------------------------------------
 
-with st.expander("📤 Medical Report Analysis (Beta)", expanded=False):
-    uploaded_file = st.file_uploader("Upload Report Here (PDF/Image)", type=["pdf", "png", "jpg", "jpeg"])
+with st.expander("📤 Medical Report Analysis (Beta)", expanded=True if uploaded_file else False):
+    uploaded_file = st.file_uploader("Upload Report Here (PDF/Image)", type=["pdf", "png", "jpg", "jpeg"], key="report_uploader")
     if uploaded_file:
-        report_text = extract_text_from_pdf(uploaded_file) if uploaded_file.type == "application/pdf" else extract_text_from_image(uploaded_file)
-        if report_text:
-            st.session_state.report_context = report_text # Store for chat context
-            st.success("✅ Report Read Successfully! You can now ask questions about it in the chat.")
-            with st.expander("📄 View Report Text"):
-                st.write(report_text)
-            
-            if st.button("🔍 Analyze Now", use_container_width=True):
-                with st.spinner("🔬 Initializing In-depth Report Analysis..."):
-                    try:
-                        # use llama-3.3-70b-versatile for in-depth analysis
-                        local_ai = get_groq_client(groq_api_key, model_name="llama-3.3-70b-versatile", temperature=0.1)
-                        
-                        # Use a specific prompt for report analysis
-                        report_agent_prompt = get_system_prompt("Medical Consultant (Report Analyst)", st.session_state.patient_age, st.session_state.patient_gender, st.session_state.patient_condition, st.session_state.patient_allergies)
-                        
-                        messages = [
-                            SystemMessage(content=report_agent_prompt),
-                            HumanMessage(content=f"""Analyze this medical report in extreme detail. 
-                            1. Breakdown every abnormal parameter.
-                            2. Explain the impact on the patient's current health.
-                            3. Provide a clear 'Next Steps' plan.
-                            
-                            REPORT TEXT:
-                            {report_text}""")
-                        ]
-                        
-                        report_analysis = local_ai.invoke(messages)
-                        if hasattr(report_analysis, "content"):
-                            report_analysis = report_analysis.content.strip()
-                        
-                        # Store in session state
-                        st.session_state.report_analysis_result = report_analysis
-                        st.balloons()
-                        
-                    except Exception as e:
-                        st.error(f"Error in deep analysis: {str(e)}")
+        # Check if we need to process the file again
+        if "last_uploaded_file_name" not in st.session_state or st.session_state.last_uploaded_file_name != uploaded_file.name:
+            with st.spinner("⏳ Extracting text from report..."):
+                report_text = extract_text_from_pdf(uploaded_file) if uploaded_file.type == "application/pdf" else extract_text_from_image(uploaded_file)
+                st.session_state.report_text_content = report_text
+                st.session_state.last_uploaded_file_name = uploaded_file.name
+                # Reset previous analysis since new file is uploaded
+                if "report_analysis_result" in st.session_state:
+                    del st.session_state.report_analysis_result
 
-            # Display Analysis if available
-            if "report_analysis_result" in st.session_state:
-                st.subheader("📋 Report Analysis Result")
-                st.markdown(st.session_state.report_analysis_result)
-                if st.button("🔊 Listen to Report"):
-                    speak_text(st.session_state.report_analysis_result, lang="hi")
+        report_text = st.session_state.get("report_text_content", "")
+
+        if report_text and "❌" not in report_text:
+            st.session_state.report_context = report_text # Store for chat context
+            st.success("✅ Report Read Successfully!")
+            
+            col_v1, col_v2 = st.columns([1, 1])
+            with col_v1:
+                with st.expander("📄 View Extracted Text"):
+                    st.write(report_text)
+            
+            with col_v2:
+                if st.button("🔍 Run Deep AI Analysis", type="primary", use_container_width=True):
+                    with st.spinner("🔬 Dr. Analyst is studying your report..."):
+                        try:
+                            # Use llama-3.3-70b-versatile for in-depth analysis
+                            local_ai = get_groq_client(groq_api_key, model_name="llama-3.3-70b-versatile", temperature=0.1)
+                            
+                            # Use a specific prompt for report analysis
+                            report_agent_prompt = get_system_prompt("Medical Consultant (Report Analyst)", 
+                                                                    st.session_state.patient_age, 
+                                                                    st.session_state.patient_gender, 
+                                                                    st.session_state.patient_condition, 
+                                                                    st.session_state.patient_allergies)
+                            
+                            messages = [
+                                SystemMessage(content=report_agent_prompt),
+                                HumanMessage(content=f"""Analyze this medical report in extreme detail. 
+                                1. Breakdown every abnormal parameter.
+                                2. Explain the impact on the patient's current health.
+                                3. Provide a clear 'Next Steps' plan.
+                                
+                                REPORT TEXT:
+                                {report_text}""")
+                            ]
+                            
+                            report_analysis = local_ai.invoke(messages)
+                            if hasattr(report_analysis, "content"):
+                                st.session_state.report_analysis_result = report_analysis.content.strip()
+                            st.balloons()
+                            
+                        except Exception as e:
+                            st.error(f"Error in deep analysis: {str(e)}")
+        elif report_text:
+            st.error(report_text) # Show the error message from extraction (e.g. OCR missing)
+
+    # Display Analysis Result Outside the loop to keep it persistent
+    if "report_analysis_result" in st.session_state:
+        st.markdown("---")
+        st.subheader("📋 In-Depth Report Diagnosis")
+        st.info("💡 Tip: Results are based on extracted text. For complex charts, please ensure the image is clear.")
+        st.markdown(st.session_state.report_analysis_result)
+        
+        c1, c2 = st.columns(2)
+        with c1:
+            if st.button("🔊 Listen to Diagnosis", use_container_width=True):
+                speak_text(st.session_state.report_analysis_result, lang="hi")
+        with c2:
+            if st.button("💬 Ask Follow-up in Chat", use_container_width=True):
+                st.session_state.messages.append({"role": "user", "content": "Tell me more about my report results."})
+                st.rerun()
