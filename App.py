@@ -2257,7 +2257,7 @@ with st.expander("📷 AI Med-Lens (Scan Medicine/Syrup) - INDIA FIRST 🇮🇳"
 
 # -------------------------------------------------------
 
-with st.expander("📤 Medical Report Analysis (Beta)", expanded=True if uploaded_file else False):
+with st.expander("📤 Medical Report Analysis (Beta)", expanded=False):
     uploaded_file = st.file_uploader("Upload Report Here (PDF/Image)", type=["pdf", "png", "jpg", "jpeg"], key="report_uploader")
     if uploaded_file:
         # Check if we need to process the file again
