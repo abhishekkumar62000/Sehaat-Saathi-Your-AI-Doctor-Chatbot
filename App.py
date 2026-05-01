@@ -62,17 +62,17 @@ def extract_text_from_image(image_input):
     try:
         # Check if Tesseract is in common Windows paths and configure it
         # This fixes "Tesseract Not Found" errors for most users
-        ocr_paths = [
-            r"C:\Program Files\Tesseract-OCR\tesseract.exe",
-            r"C:\Program Files (x86)\Tesseract-OCR\tesseract.exe",
-            r"C:\Users\DELL\AppData\Local\Tesseract-OCR\tesseract.exe" # User scope
-        ]
-        
-        # Only set if not already set/working
-        for path in ocr_paths:
-            if os.path.exists(path):
-                pytesseract.pytesseract.tesseract_cmd = path
-                break
+        if os.name == 'nt': # Only check paths on Windows
+            ocr_paths = [
+                r"C:\Program Files\Tesseract-OCR\tesseract.exe",
+                r"C:\Program Files (x86)\Tesseract-OCR\tesseract.exe",
+                r"C:\Users\DELL\AppData\Local\Tesseract-OCR\tesseract.exe" # User scope
+            ]
+            
+            for path in ocr_paths:
+                if os.path.exists(path):
+                    pytesseract.pytesseract.tesseract_cmd = path
+                    break
 
         image = Image.open(image_input)
         image = image.convert('L') # Grayscale
@@ -161,6 +161,11 @@ END:VCALENDAR"""
 
 # Load environment variables with override to ensure updates are caught
 load_dotenv(override=True)
+
+# --- 🛠️ Optimized Model Loading ---
+@st.cache_resource
+def get_groq_client(api_key, model_name="llama-3.3-70b-versatile", temperature=0.3):
+    return ChatGroq(api_key=api_key, model=model_name, temperature=temperature)
 
 # Get the API key from environment variable
 groq_api_key = os.getenv('GROQ_API_KEY')
@@ -1635,7 +1640,8 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 try:
-    ai_doctor = ChatGroq(api_key=groq_api_key, model=selected_model, temperature=0.3)
+    # 1. Main AI Doctor Initialized - Use Cached Client for Streamlit Cloud stability
+    ai_doctor = get_groq_client(groq_api_key, model_name=selected_model, temperature=0.3)
 except Exception as e:
     st.error(f"❌ Failed to initialize AI Doctor: {str(e)}")
     st.stop()
@@ -1677,7 +1683,8 @@ Levels: LOW (0-30), MEDIUM (31-60), HIGH (61-85), CRITICAL (86-100).
 
 def get_severity_score(user_text):
     try:
-        severity_ai = ChatGroq(api_key=groq_api_key, model="llama3-70b-8192", temperature=0)
+        # Use Cached Client for stability
+        severity_ai = get_groq_client(groq_api_key, model_name="llama3-70b-8192", temperature=0)
         resp = severity_ai.invoke([SystemMessage(content=severity_system_prompt), HumanMessage(content=user_text)])
         # Extract JSON using regex in case model adds surrounding text
         match = re.search(r"\{.*\}", resp.content, re.DOTALL)

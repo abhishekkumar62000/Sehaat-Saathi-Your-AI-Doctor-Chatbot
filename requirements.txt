@@ -17,5 +17,6 @@ Pillow==10.4.0
 pytesseract==0.3.13
 fpdf==1.7.2
 
-faiss-cpu
-sentence-transformers
+# Removed faiss-cpu and sentence-transformers to save RAM on Streamlit Cloud
+# faiss-cpu
+# sentence-transformers
