@@ -640,24 +640,30 @@ st.markdown("""
 
     /* ⌨ Premium Chat Input Styling */
     [data-testid="stChatInput"] {
-        bottom: 25px !important;
+        position: fixed !important;
+        bottom: 30px !important;
         left: 50% !important;
         transform: translateX(-50%) !important;
-        width: 85% !important;
-        max-width: 950px !important;
+        width: 80% !important;
+        max-width: 800px !important;
         border-radius: 35px !important;
         border: 1.5px solid rgba(0, 210, 255, 0.4) !important;
-        background: rgba(15, 12, 41, 0.85) !important;
+        background: rgba(15, 12, 41, 0.9) !important;
         backdrop-filter: blur(20px) !important;
         box-shadow: 0 15px 45px rgba(0,0,0,0.6) !important;
-        padding: 8px !important;
-        transition: all 0.3s ease !important;
+        padding: 5px !important;
+        z-index: 1000 !important;
+    }
+
+    /* Ensure the chat input container doesn't force it to the side */
+    .stChatInputContainer {
+        padding: 0 !important;
+        background: transparent !important;
     }
 
     [data-testid="stChatInput"]:focus-within {
         border-color: #00d2ff !important;
         box-shadow: 0 0 30px rgba(0, 210, 255, 0.4), 0 15px 45px rgba(0,0,0,0.6) !important;
-        transform: translateX(-50%) translateY(-2px) !important;
     }
 
     /* Modern Scrollbar */
