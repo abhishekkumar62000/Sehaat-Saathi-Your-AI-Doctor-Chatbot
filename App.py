@@ -185,52 +185,135 @@ if not groq_api_key:
 # --- 📄 PDF Generation Class ---
 class PDF(FPDF):
     def header(self):
-        self.set_font('Arial', 'B', 16)
-        self.cell(0, 10, 'SehaatSaathi - Virtual Prescription', 0, 1, 'C')
+        # 🏥 Premium Hospital Letterhead
+        self.set_fill_color(0, 51, 102) # Deep Medical Blue
+        self.rect(0, 0, 210, 45, 'F')
+        
+        # Hospital Name & Logo Placeholder
+        self.set_text_color(255, 255, 255)
+        self.set_font('Times', 'B', 28)
+        self.cell(0, 15, 'SEHAAT SAATHI MEDICAL CENTER', 0, 1, 'C')
+        
         self.set_font('Arial', 'I', 10)
-        self.cell(0, 10, 'Your AI Powered Health Assistant', 0, 1, 'C')
+        self.cell(0, 5, 'Advanced AI-Integrated Diagnostic & Healthcare Division', 0, 1, 'C')
+        self.set_font('Arial', '', 9)
+        self.cell(0, 5, '121, Health City Tower, Patna, Bihar | Tel: +91 1800-SAATHI', 0, 1, 'C')
         self.ln(10)
-        self.line(10, 30, 200, 30)
+        
+        # Watermark (Faint background text)
+        self.set_font('Arial', 'B', 50)
+        self.set_text_color(240, 240, 240)
+        self.rotate(45, 105, 148)
+        self.text(40, 190, 'VERIFIED BY SEHAAT SAATHI')
+        self.rotate(0) # Reset rotation
 
     def footer(self):
+        self.set_y(-30)
+        # Digital Stamp Placeholder
+        self.set_draw_color(0, 102, 204)
+        self.set_text_color(0, 102, 204)
+        self.set_font('Arial', 'B', 8)
+        self.rect(150, 255, 40, 15)
+        self.text(152, 260, 'DIGITALLY SIGNED')
+        self.text(152, 265, 'ID: SS-AI-2026')
+        
         self.set_y(-15)
-        self.set_font('Arial', 'I', 8)
-        self.set_text_color(128)
-        self.cell(0, 10, 'Disclaimer: This is AI-generated advice. Please consult a real doctor for serious conditions.', 0, 0, 'C')
+        self.set_font('Arial', '', 8)
+        self.set_text_color(100, 100, 100)
+        self.cell(0, 5, 'This report is generated via AI Tele-consultation. Not valid for medico-legal purposes.', 0, 1, 'C')
+        self.set_font('Arial', 'B', 9)
+        self.set_text_color(150, 0, 0)
+        self.cell(0, 5, 'EMERGENCY? CALL 112 / 108 IMMEDIATELY', 0, 0, 'C')
 
 def create_prescription_pdf(patient_name, age, gender, weight, conditions, advice):
     pdf = PDF()
     pdf.add_page()
     
-    # Patient Details Section
-    pdf.set_font("Arial", 'B', 12)
-    pdf.set_fill_color(240, 240, 240)
-    pdf.cell(0, 10, "  PATIENT DETAILS", ln=True, fill=True)
+    # --- 📋 PATIENT RECORD BAR ---
+    pdf.set_y(50)
+    pdf.set_fill_color(245, 250, 255)
+    pdf.rect(10, 50, 190, 40, 'F')
+    pdf.set_draw_color(0, 51, 102)
+    pdf.rect(10, 50, 190, 40)
+    
+    pdf.set_font("Arial", 'B', 14)
+    pdf.set_text_color(0, 51, 102)
+    pdf.set_xy(15, 55)
+    pdf.cell(100, 10, f"PATIENT: {patient_name.upper()}")
+    
+    pdf.set_font("Arial", '', 11)
+    pdf.set_text_color(60, 60, 60)
+    pdf.set_xy(140, 55)
+    pdf.cell(0, 10, f"DATE: {datetime.datetime.now().strftime('%d/%m/%Y %H:%M')}", align='R')
+    
+    # Grid info
+    pdf.set_font("Arial", 'B', 10)
+    pdf.set_xy(15, 68)
+    pdf.cell(30, 8, "AGE / GENDER:")
+    pdf.set_font("Arial", '', 10)
+    pdf.cell(40, 8, f"{age} YRS / {gender}")
+    
+    pdf.set_font("Arial", 'B', 10)
+    pdf.cell(20, 8, "WEIGHT:")
+    pdf.set_font("Arial", '', 10)
+    pdf.cell(30, 8, f"{weight} KG")
+    
+    pdf.ln(8)
+    pdf.set_font("Arial", 'B', 10)
+    pdf.set_x(15)
+    pdf.cell(30, 8, "CHIEF COMPLAINTS:")
+    pdf.set_font("Arial", 'I', 9)
+    pdf.set_text_color(120, 40, 40)
+    pdf.cell(0, 8, f"{conditions}")
+    
+    pdf.ln(15)
+    
+    # --- ⚕️ RX SECTION (The Realistic Writing) ---
+    pdf.set_font("Times", 'B', 30)
+    pdf.set_text_color(0, 51, 102)
+    pdf.cell(20, 15, "Rx", ln=True)
+    
+    pdf.set_draw_color(200, 200, 200)
+    pdf.line(10, pdf.get_y(), 200, pdf.get_y())
+    pdf.ln(8)
+    
+    # --- 💊 MEDICAL ADVICE (Doctor's Writing Style) ---
+    pdf.set_font("Times", 'B', 12)
+    pdf.set_text_color(0, 0, 0)
+    pdf.cell(0, 8, "MANAGEMENT & TREATMENT PLAN:", ln=True)
     pdf.ln(2)
     
-    pdf.set_font("Arial", size=11)
-    pdf.cell(100, 8, f"Name: {patient_name}", ln=0)
-    pdf.cell(0, 8, f"Date: {datetime.datetime.now().strftime('%d-%b-%Y')}", ln=True)
-    pdf.cell(100, 8, f"Age/Gender: {age} / {gender}", ln=0)
-    pdf.cell(0, 8, f"Weight: {weight} kg", ln=True)
-    pdf.cell(0, 8, f"History: {conditions}", ln=True)
-    pdf.ln(5)
+    # Using 'Times' Italic to simulate professional clinical handwriting style
+    pdf.set_font("Times", 'I', 11.5)
+    pdf.set_text_color(20, 20, 20)
     
-    # Diagnosis/Advice Section
-    pdf.set_font("Arial", 'B', 12)
-    pdf.set_fill_color(240, 240, 240)
-    pdf.cell(0, 10, "  CLINICAL ASSESSMENT & PLAN", ln=True, fill=True)
-    pdf.ln(5)
+    # Advanced Cleanup for professional look
+    clean_advice = advice.replace("👨‍⚕️", "").replace("💊", "•").replace("🩺", "").replace("✅", "[x]").replace("⚠️", "Caution: ")
+    clean_lines = clean_advice.split('\n')
     
-    pdf.set_font("Arial", size=11)
-    # Handle text encoding for standard fonts (removing unsupported chars)
-    # This ensures no crash on emojis or special symbols
-    safe_advice = advice.encode('latin-1', 'replace').decode('latin-1')
-    pdf.multi_cell(0, 6, safe_advice)
+    for line in clean_lines:
+        if line.strip():
+            # If line looks like a header (e.g., "Medicines:")
+            if ":" in line and len(line) < 30:
+                pdf.set_font("Times", 'BI', 12)
+                pdf.multi_cell(0, 7, line.strip().encode('latin-1', 'replace').decode('latin-1'))
+                pdf.set_font("Times", 'I', 11.5)
+            else:
+                pdf.multi_cell(0, 7, f"    {line.strip().encode('latin-1', 'replace').decode('latin-1')}")
     
+    # --- 🗓️ FOLLOW UP ---
+    pdf.ln(15)
+    pdf.set_font("Arial", 'B', 10)
+    pdf.cell(0, 8, "Follow-up: 5-7 days or if symptoms worsen.", ln=True)
+    
+    # --- 🖋️ SIGNATURE & STAMP ---
     pdf.ln(10)
-    pdf.set_font("Arial", 'B', 11)
-    pdf.cell(0, 10, "Recommended by: SehaatSaathi AI Medical Board", ln=True, align='R')
+    pdf.set_font("Times", 'BI', 16)
+    pdf.set_text_color(0, 51, 102)
+    pdf.cell(0, 8, "Dr. Sehaat Saathi (AI-MD)", ln=True, align='R')
+    pdf.set_font("Arial", '', 9)
+    pdf.set_text_color(100, 100, 100)
+    pdf.cell(0, 5, "Consultant AI Physician | Reg No: 88231-SSA", ln=True, align='R')
     
     return pdf.output(dest='S').encode('latin-1')
 
@@ -293,10 +376,10 @@ if AUTHENTICATION_AVAILABLE and not st.session_state.authenticated:
 st.markdown("""
 <!-- 🇮🇳 Ashoka Chakra Background Animation -->
 <div class="ashoka-chakra-bg">
-    <svg viewBox="0 0 240 240" xmlns="http://www.w3.org/2000/svg" filter="drop-shadow(0 0 3px rgba(0, 210, 255, 0.1))">
-        <circle cx="120" cy="120" r="110" fill="none" stroke="#00d2ff" stroke-width="10" stroke-opacity="1.0"/>
-        <circle cx="120" cy="120" r="20" fill="#00d2ff" fill-opacity="0.8"/>
-        <g stroke="#00d2ff" stroke-width="4" stroke-opacity="1.0">
+    <svg viewBox="0 0 240 240" xmlns="http://www.w3.org/2000/svg" filter="drop-shadow(0 0 3px rgba(0, 210, 255, 0.05))">
+        <circle cx="120" cy="120" r="110" fill="none" stroke="#00d2ff" stroke-width="10" stroke-opacity="0.4"/>
+        <circle cx="120" cy="120" r="20" fill="#00d2ff" fill-opacity="0.3"/>
+        <g stroke="#00d2ff" stroke-width="4" stroke-opacity="0.4">
             <line x1="120" y1="120" x2="120" y2="10" transform="rotate(0 120 120)"/>
             <line x1="120" y1="120" x2="120" y2="10" transform="rotate(15 120 120)"/>
             <line x1="120" y1="120" x2="120" y2="10" transform="rotate(30 120 120)"/>
@@ -353,8 +436,8 @@ st.markdown("""
     }
     
     @keyframes pulseChakra {
-        0% { transform: translate(-50%, -50%) scale(0.9); opacity: 0.06; }
-        100% { transform: translate(-50%, -50%) scale(1.05); opacity: 0.15; } 
+        0% { transform: translate(-50%, -50%) scale(0.9); opacity: 0.03; }
+        100% { transform: translate(-50%, -50%) scale(1.05); opacity: 0.08; } 
     }
     
     .ashoka-chakra-bg {
@@ -386,19 +469,19 @@ st.markdown("""
         z-index: 1; 
         pointer-events: none;
         transform: translateY(-50%);
-        opacity: 0.9;
+        opacity: 0.15; /* Much more subtle transparency */
     }
 
     .ecg-path {
         fill: none;
-        stroke: #E39217; /* Neon Green */
-        stroke-width: 4;
+        stroke: #E39217; /* Saffron/Orange */
+        stroke-width: 3;
         stroke-linecap: round;
         stroke-linejoin: round;
         stroke-dasharray: 2000;
         stroke-dashoffset: 2000;
-        animation: drawECG 3s linear infinite, glowECG 2s ease-in-out infinite alternate;
-        filter: drop-shadow(0 0 10px rgba(57, 255, 20, 0.8));
+        animation: drawECG 4s linear infinite, glowECG 3s ease-in-out infinite alternate;
+        filter: drop-shadow(0 0 5px rgba(57, 255, 20, 0.3));
     }
     
     .ecg-container svg {
@@ -413,8 +496,8 @@ st.markdown("""
     }
     
     @keyframes glowECG {
-        0% { filter: drop-shadow(0 0 5px rgba(57, 255, 20, 0.5)); stroke: #00d2ff; }
-        100% { filter: drop-shadow(0 0 20px rgba(57, 255, 20, 1.0)); stroke: #39ff14; }
+        0% { filter: drop-shadow(0 0 3px rgba(0, 210, 255, 0.2)); stroke: #00d2ff; }
+        100% { filter: drop-shadow(0 0 10px rgba(57, 255, 20, 0.4)); stroke: #39ff14; }
     }
     
     .ecg-fade-left, .ecg-fade-right {
@@ -490,7 +573,117 @@ st.markdown("""
         text-shadow: 0 0 10px rgba(0, 210, 255, 0.5);
     }
     
-    /* 💊 Chat Message Bubbles */
+    /* 💊 Chat Message Bubbles Enhancement */
+    [data-testid="stChatMessage"] {
+        background: rgba(255, 255, 255, 0.03) !important;
+        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+        border-radius: 20px !important;
+        padding: 1.2rem !important;
+        margin-bottom: 1.2rem !important;
+        backdrop-filter: blur(8px) !important;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        animation: fadeInSlide 0.5s ease-out forwards;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1) !important;
+    }
+
+    @keyframes fadeInSlide {
+        from { opacity: 0; transform: translateY(15px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    [data-testid="stChatMessage"]:hover {
+        background: rgba(255, 255, 255, 0.06) !important;
+        border: 1px solid rgba(0, 210, 255, 0.3) !important;
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4) !important;
+        transform: translateY(-3px) scale(1.005);
+    }
+
+    /* Assistant specific: subtle glow and distinct avatar border */
+    [data-testid="stChatMessage"][data-testimonial="assistant"], 
+    [data-testid="stChatMessage"]:has(img[alt="assistant"]),
+    [data-testid="stChatMessage"]:nth-child(even) {
+        border-left: 5px solid #00d2ff !important;
+        background: linear-gradient(90deg, rgba(0, 210, 255, 0.05), rgba(255, 255, 255, 0.01)) !important;
+    }
+
+    /* User specific: solid right border */
+    [data-testid="stChatMessage"][data-testimonial="user"],
+    [data-testid="stChatMessage"]:has(img[alt="user"]),
+    [data-testid="stChatMessage"]:nth-child(odd) {
+        border-right: 5px solid #ff0099 !important;
+        background: linear-gradient(-90deg, rgba(255, 0, 153, 0.05), rgba(255, 255, 255, 0.01)) !important;
+    }
+
+    [data-testid="stChatMessageContent"] {
+        color: #f8f9fa !important;
+        line-height: 1.7 !important;
+        font-family: 'Segoe UI', Roboto, sans-serif !important;
+        font-size: 1.05rem !important;
+    }
+
+    /* Avatar Styling - Premium Glow */
+    [data-testid="stChatMessageAvatar"] {
+        width: 45px !important;
+        height: 45px !important;
+        background-color: transparent !important;
+        border: 2px solid rgba(0, 210, 255, 0.6) !important;
+        box-shadow: 0 0 15px rgba(0, 210, 255, 0.3) !important;
+        padding: 2px !important;
+        border-radius: 50% !important;
+        animation: avatarPulse 3s ease-in-out infinite alternate;
+    }
+
+    @keyframes avatarPulse {
+        0% { box-shadow: 0 0 5px rgba(0, 210, 255, 0.2); border-color: rgba(0, 210, 255, 0.4); }
+        100% { box-shadow: 0 0 15px rgba(0, 210, 255, 0.6); border-color: rgba(0, 210, 255, 1); }
+    }
+
+    /* ⌨ Premium Chat Input Styling */
+    [data-testid="stChatInput"] {
+        bottom: 25px !important;
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+        width: 85% !important;
+        max-width: 950px !important;
+        border-radius: 35px !important;
+        border: 1.5px solid rgba(0, 210, 255, 0.4) !important;
+        background: rgba(15, 12, 41, 0.85) !important;
+        backdrop-filter: blur(20px) !important;
+        box-shadow: 0 15px 45px rgba(0,0,0,0.6) !important;
+        padding: 8px !important;
+        transition: all 0.3s ease !important;
+    }
+
+    [data-testid="stChatInput"]:focus-within {
+        border-color: #00d2ff !important;
+        box-shadow: 0 0 30px rgba(0, 210, 255, 0.4), 0 15px 45px rgba(0,0,0,0.6) !important;
+        transform: translateX(-50%) translateY(-2px) !important;
+    }
+
+    /* Modern Scrollbar */
+    ::-webkit-scrollbar {
+        width: 8px;
+    }
+    ::-webkit-scrollbar-track {
+        background: rgba(255, 255, 255, 0.02);
+    }
+    ::-webkit-scrollbar-thumb {
+        background: linear-gradient(180deg, #00d2ff, #ff0099);
+        border-radius: 10px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+        background: #00d2ff;
+    }
+
+    /* Customizing markdown codes and blocks inside chat */
+    .stMarkdown code {
+        background: rgba(0, 210, 255, 0.1) !important;
+        color: #00d2ff !important;
+        padding: 0.2rem 0.4rem !important;
+        border-radius: 4px !important;
+    }
+
+    /* 💊 Chat Message Bubbles (Deprecated/Old reference cleanup) */
     .stChatMessage {
         background-color: rgba(255, 255, 255, 0.05);
         border: 1px solid rgba(255, 255, 255, 0.1);
@@ -499,12 +692,6 @@ st.markdown("""
         margin-bottom: 15px;
         box-shadow: 0 4px 15px rgba(0,0,0,0.2);
         transition: transform 0.2s, box-shadow 0.2s;
-    }
-
-    .stChatMessage:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 6px 20px rgba(0,0,0,0.4);
-        border: 1px solid rgba(0, 210, 255, 0.3);
     }
     
     /* � Buttons */
